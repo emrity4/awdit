@@ -5,150 +5,98 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>Awdit</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
-:root{--bg:#f0f2f5;--surface:#fff;--text:#1a1a2e;--text2:#555;--text3:#888;--border:#e8e8e8;--income:#0d904f;--expense:#d93025;--accent:#1a73e8;--accent2:#0d47a1;--input-bg:#f5f6fa;--tag-bg:#f0f2f5;--bar-bg:#e8e8e8;--card-shadow:0 2px 12px rgba(0,0,0,.06)}
+@font-face{font-family:'Work Sans';font-style:normal;font-weight:400 700;font-display:swap;src:url(fonts/WorkSans.woff2)format('woff2')}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Work Sans',-apple-system,BlinkMacSystemFont,sans-serif}
+:root{--bg:#eee;--card:#fff;--text:#000;--text2:#555;--border:#ddd;--inc:#0d904f;--exp:#d93025}
 @media(prefers-color-scheme:dark){
-:root{--bg:#0f1117;--surface:#1a1d28;--text:#e4e6ed;--text2:#9ca0b0;--text3:#6b7084;--border:#2a2d3a;--income:#34d399;--expense:#f87171;--accent:#60a5fa;--accent2:#3b82f6;--input-bg:#252836;--tag-bg:#252836;--bar-bg:#2a2d3a;--card-shadow:0 2px 12px rgba(0,0,0,.3)}
+:root{--bg:#111;--card:#1a1a2e;--text:#eee;--text2:#999;--border:#333;--inc:#4ade80;--exp:#f87171}
 }
-body{background:var(--bg);color:var(--text);padding-bottom:24px;min-height:100vh}
-.header{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;padding:20px 16px 40px;position:relative}
-.header h1{font-size:22px;font-weight:700}
-.header .sub{font-size:12px;opacity:.7;margin-top:2px}
-.header-actions{position:absolute;top:16px;right:16px;display:flex;gap:6px}
-.header-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.1);color:#fff;width:34px;height:34px;border-radius:8px;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.header-btn:active{background:rgba(255,255,255,.3)}
+body{background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:24px}
+.top{background:linear-gradient(135deg,#1a73e8,#0d47a1);color:#fff;padding:20px 16px 40px}
+.top h1{font-size:22px;font-weight:700}
+.top .sub{font-size:12px;opacity:.7;margin-top:2px}
+.top-acts{position:absolute;top:16px;right:16px}
+.top-acts button{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.1);color:#fff;width:34px;height:34px;border-radius:8px;font-size:15px;cursor:pointer}
+.sum{display:flex;gap:8px;padding:0 12px;margin-top:-28px;position:relative}
+.sum>div{flex:1;background:var(--card);border-radius:12px;padding:12px 8px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.sum .lbl{font-size:9px;color:var(--text2);text-transform:uppercase;font-weight:600}
+.sum .amt{font-size:16px;font-weight:800;margin-top:2px}
+.sum .inc .amt{color:var(--inc)}
+.sum .exp .amt{color:var(--exp)}
+.sum .net .amt{color:var(--inc)}
+.bar{height:4px;background:var(--border);border-radius:2px;margin:8px 12px;overflow:hidden;opacity:0}
+.bar.on{opacity:1}
+.bar-fill{height:100%;width:0;background:var(--inc);border-radius:2px}
+.bar-lbl{text-align:center;font-size:11px;color:var(--text2);padding:0 12px 8px;display:none}
+.bar-lbl.on{display:block}
 #content{padding:12px}
-.setup-card{background:var(--surface);border-radius:14px;padding:20px;box-shadow:var(--card-shadow);margin:12px}
-.setup-card h2{font-size:18px;margin-bottom:4px}
-.setup-card p{font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5}
-.setup-card label{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--input-bg);border-radius:10px;margin-bottom:6px;cursor:pointer}
-.setup-card input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
-.setup-card .label-text{font-size:14px;font-weight:500}
-.setup-card .label-hint{font-size:11px;color:var(--text3)}
-.setup-card .custom-area{margin-top:12px}
-.setup-card .custom-area label{font-size:12px;color:var(--text2);display:block;padding:0;margin-bottom:4px;background:none}
-.setup-card .custom-area input{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;background:var(--input-bg);color:var(--text)}
-.setup-card .start-btn{width:100%;padding:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;margin-top:14px;cursor:pointer}
-.setup-card .start-btn:active{opacity:.8}
-.spinner{width:28px;height:28px;border:3px solid var(--bar-bg);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 10px}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loading{text-align:center;padding:60px 0;color:var(--text3)}
-.progress-bar{height:4px;background:var(--bar-bg);border-radius:2px;margin:0 12px 8px;overflow:hidden;opacity:0}
-.progress-bar.active{opacity:1}
-.progress-fill{height:100%;width:0;background:var(--accent);border-radius:2px}
-.progress-label{text-align:center;font-size:11px;color:var(--text3);padding:0 12px 8px;display:none}
-.progress-label.active{display:block}
-.range-tabs{display:flex;gap:6px;padding:4px 12px 0;overflow-x:auto}
-.range-tab{padding:4px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:11px;cursor:pointer;white-space:nowrap;font-weight:600;color:var(--text2)}
-.range-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-.bank-tabs{display:flex;gap:6px;padding:4px 12px;overflow-x:auto}
-.bank-tab{padding:4px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:11px;cursor:pointer;white-space:nowrap;font-weight:600;color:var(--text2)}
-.bank-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-.filter-bar{padding:0 12px 6px}
-.filter-bar input{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;background:var(--input-bg);color:var(--text)}
-.filter-bar input:focus{border-color:var(--accent)}
-.stat-row{display:flex;gap:8px;padding:0 12px 8px;overflow-x:auto}
-.stat-card{flex:1;min-width:110px;background:var(--surface);border-radius:10px;padding:10px 12px;box-shadow:var(--card-shadow)}
-.stat-card .lbl{font-size:9px;color:var(--text3);text-transform:uppercase;font-weight:600}
-.stat-card .val{font-size:14px;font-weight:700;margin-top:2px}
-.stat-card .val.green{color:var(--income)}
-.stat-card .val.red{color:var(--expense)}
-.group-label{padding:12px 0 4px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase}
-.tx-card{background:var(--surface);border-radius:12px;padding:10px 12px;margin-bottom:4px;box-shadow:var(--card-shadow);display:flex;align-items:flex-start;gap:8px}
-.tx-icon{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;font-weight:700}
-.tx-icon.income{background:rgba(13,144,79,.12);color:var(--income)}
-.tx-icon.expense{background:rgba(217,48,37,.12);color:var(--expense)}
-.tx-body{flex:1;min-width:0}
-.tx-row1{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
-.tx-bank{font-size:9px;color:var(--text3);background:var(--tag-bg);padding:0 5px;border-radius:3px;font-weight:600}
-.tx-cat{font-size:9px;color:#fff;padding:0 5px;border-radius:3px;font-weight:600}
-.tx-cat.transfer{background:#e65100}
-.tx-cat.payment{background:#1565c0}
-.tx-cat.airtime{background:#6a1b9a}
-.tx-cat.withdrawal{background:#c62828}
-.tx-cat.deposit{background:#2e7d32}
-.tx-cat.salary{background:#00695c}
-.tx-desc{font-size:12px;color:var(--text);margin-top:1px;word-break:break-word;line-height:1.3}
-.tx-date{font-size:9px;color:var(--text3);margin-top:1px}
-.tx-amt{font-size:15px;font-weight:800;text-align:right;flex-shrink:0;min-width:70px}
-.tx-amt.income{color:var(--income)}
-.tx-amt.expense{color:var(--expense)}
-.summary{display:flex;gap:8px;padding:0 12px;margin-top:-28px;position:relative}
-.summary>div{flex:1;background:var(--surface);border-radius:12px;padding:12px 8px;text-align:center;box-shadow:var(--card-shadow)}
-.summary .lbl{font-size:9px;color:var(--text3);text-transform:uppercase;font-weight:600}
-.summary .amt{font-size:16px;font-weight:800;margin-top:2px}
-.summary .income .amt{color:var(--income)}
-.summary .expense .amt{color:var(--expense)}
-.summary .net .amt{color:var(--accent)}
-.empty{padding:40px 0;text-align:center;color:var(--text3);font-size:13px}
+.s-card{background:var(--card);border-radius:12px;padding:20px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.s-card h2{font-size:18px;margin-bottom:4px}
+.s-card p{font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.5}
+.s-card label{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg);border-radius:8px;margin-bottom:6px;cursor:pointer}
+.s-card input[type=checkbox]{width:18px;height:18px;accent-color:#1a73e8}
+.s-card .lt{font-size:14px;font-weight:500}
+.s-card .lh{font-size:11px;color:var(--text2)}
+.s-card .sb{width:100%;padding:12px;background:linear-gradient(135deg,#1a73e8,#0d47a1);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;margin-top:14px;cursor:pointer}
+.spin{width:28px;height:28px;border:3px solid var(--border);border-top-color:#1a73e8;border-radius:50%;animation:s .8s linear infinite;margin:0 auto 10px}
+@keyframes s{to{transform:rotate(360deg)}}
+.load{text-align:center;padding:60px 0;color:var(--text2)}
+.tx{background:var(--card);border-radius:12px;padding:10px 12px;margin-bottom:4px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.tx .d{font-size:12px;color:var(--text);margin-bottom:2px}
+.tx .m{display:flex;justify-content:space-between;align-items:center}
+.tx .m .a{font-size:15px;font-weight:800}
+.tx .m .a.inc{color:var(--inc)}
+.tx .m .a.exp{color:var(--exp)}
+.tx .m .d2{font-size:10px;color:var(--text2)}
+.empty{padding:40px 0;text-align:center;color:var(--text2);font-size:13px}
+.grp{padding:12px 0 4px;font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase}
 </style>
 </head>
 <body>
 
-<div class="header">
+<div class="top" style="position:relative">
   <h1>Awdit</h1>
-  <div class="sub" id="subtitle">Setup required</div>
-  <div class="header-actions">
-    <button class="header-btn" onclick="toggleTheme()" title="Theme">🌓</button>
-    <button class="header-btn" onclick="doRefresh()" title="Refresh">↻</button>
-    <button class="header-btn" onclick="openShare()" title="Share">↗</button>
+  <div class="sub" id="sub">Setup required</div>
+  <div class="top-acts">
+    <button onclick="go()">↻</button>
   </div>
 </div>
 
-<div class="summary" id="summaryRow">
-  <div class="income"><div class="lbl">Income</div><div class="amt" id="totalIncome">ETB 0</div></div>
-  <div class="expense"><div class="lbl">Expense</div><div class="amt" id="totalExpense">ETB 0</div></div>
-  <div class="net"><div class="lbl">Net</div><div class="amt" id="totalNet">ETB 0</div></div>
+<div class="sum" id="sum">
+  <div class="inc"><div class="lbl">Income</div><div class="amt" id="inc">ETB 0</div></div>
+  <div class="exp"><div class="lbl">Expense</div><div class="amt" id="exp">ETB 0</div></div>
+  <div class="net"><div class="lbl">Net</div><div class="amt" id="net">ETB 0</div></div>
 </div>
 
-<div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
-<div class="progress-label" id="progressLabel">Reading messages...</div>
+<div class="bar" id="bar"><div class="bar-fill" id="bf"></div></div>
+<div class="bar-lbl" id="bl">Reading...</div>
 
 <div id="content"></div>
 
 <script>
-var allSms=[],filteredSms=[],activeBank='all',activeRange='all',filterTimer,firstRun=true;
-var BANKS=[{id:'telebirr',label:'Telebirr',hint:'Shortcode 127'},{id:'cbe',label:'CBE Birr',hint:'Commercial Bank of Ethiopia'},{id:'dashen',label:'Dashen Bank',hint:'Dashen Bank S.C.'}];
+var all=[],fil=[],pen=[],timer;
+function isC(){return !!localStorage.getItem('c')}
 
-function isCfg(){return !!localStorage.getItem('awdit_choice')}
-function cfg(str,def){try{return JSON.parse(localStorage.getItem(str)||JSON.stringify(def))}catch(e){return def}}
-
-function showSetup(){
-  var s=cfg('awdit_banks',['telebirr','cbe','dashen']);
-  var c=localStorage.getItem('awdit_custom')||'';
+function setup(){
+  var c=localStorage.getItem('c');
   document.getElementById('content').innerHTML=
-    '<div class="setup-card"><h2>Get Started</h2>'+
-    '<p>Select which financial services to track.</p>'+
-    '<div id="bc">'+BANKS.map(function(b){return '<label><input type="checkbox" value="'+b.id+'"'+(s.indexOf(b.id)>=0?' checked':'')+'><div><div class="label-text">'+b.label+'</div><div class="label-hint">'+b.hint+'</div></div></label>'}).join('')+'</div>'+
-    '<div class="custom-area"><label>Extra senders (comma-separated)</label><input type="text" id="cs" value="'+c+'" placeholder="e.g. 127, 8484"></div>'+
-    '<button class="start-btn" onclick="startTr()">Start Tracking</button></div>';
-  document.getElementById('subtitle').textContent='Setup required';
+    '<div class="s-card"><h2>Get Started</h2><p>Awdit reads Telebirr SMS to track your spending.</p>'+
+    '<label><input type="checkbox" id="chk" checked><div><div class="lt">Telebirr</div><div class="lh">Shortcode 127</div></div></label>'+
+    '<button class="sb" onclick="st()">Start Tracking</button></div>';
 }
-
-function startTr(){
-  var cks=[],e=document.querySelectorAll('#bc input:checked');for(var i=0;i<e.length;i++)cks.push(e[i].value);
-  var cs=document.getElementById('cs').value.trim();
-  if(!cks.length&&!cs)return;
-  localStorage.setItem('awdit_banks',JSON.stringify(cks));
-  localStorage.setItem('awdit_custom',cs);
-  localStorage.setItem('awdit_choice','1');
-  document.getElementById('subtitle').textContent='Reading...';
-  doRefresh();
+function st(){
+  localStorage.setItem('c','1');
+  document.getElementById('sub').textContent='Reading...';
+  go();
 }
-
-function getFs(){
-  var b=cfg('awdit_banks',[]),c=(localStorage.getItem('awdit_custom')||'').split(',').map(function(s){return s.trim()}).filter(Boolean);
-  return b.concat(c).join(',');
+function go(){
+  if(!isC()){setup();return}
+  all=[];pen=[];
+  document.getElementById('content').innerHTML='<div class="load"><div class="spin"></div></div>';
+  document.getElementById('sub').textContent='Refreshing...';
+  Android.setFilters('telebirr,127');
+  Android.refresh();
 }
-
-function startApp(){
-  if(isCfg())doRefresh();
-  else showSetup();
-}
-
-function pageReady(){startApp()}
-function smsGranted(){startApp()}
-function smsDenied(){document.getElementById('content').innerHTML='<div class="empty">SMS permission is required.</div>'}
 
 function parseAmt(t){
   var c=t.replace(/available\s*(?:bal|balance)[^.]*\./gi,' ').replace(/(?:bal|balance)\s*:\s*(?:ETB|Birr)?\s*[\d,.]+/gi,' ').replace(/ETB\s*0\.00/gi,' ');
@@ -158,161 +106,57 @@ function parseAmt(t){
   var a=c.match(/([\d,]+(?:\.\d{2})?)\s*(?:ETB|Birr)/i);return a?parseFloat(a[1].replace(/,/g,'')):0;
 }
 
-function detectCat(t){
-  var l=t.toLowerCase();
-  if(/airtime|recharge/i.test(l))return'airtime';
-  if(/withdraw|withdrawal|cash\s*(?:out|back)/i.test(l))return'withdrawal';
-  if(/salary|payroll/i.test(l))return'salary';
-  if(/deposit/i.test(l))return'deposit';
-  if(/transfer|sent\s+to|transferred/i.test(l))return'transfer';
-  if(/payment\s+(?:of|to|for)|purchase|paid\s+to|bought|merchant/i.test(l))return'payment';
-  if(/received|credited|from\s+\w+/i.test(l))return'deposit';
-  return'transfer';
-}
-
-function classify(t){
-  var l=t.toLowerCase();
-  if(/received|credited|deposit|payment\s+from|from\s+\S+\s+(?:sent|transferred|paid)/i.test(l)||/Cr\b/i.test(l))return'income';
-  if(/debited|debit|payment\s+(?:of|to|for)|paid\s+to|withdrawal|withdraw|purchase|sent\s+to|transfer\s+to|airtime/i.test(l)||/Dr\b/i.test(l))return'expense';
-  return l.indexOf('from')>=0&&l.indexOf('to')<0?'income':'expense';
-}
-
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
-function extractDesc(t){
-  var d='';
-  var mt=t.match(/(?:to|for)\s+(.+?)(?:\.|$)(?:\s*(?:Available|Bal|Balance|ETB|Birr|Tx[nr]?[Id]))?/i);if(mt)d=mt[1].trim();
-  var mf=t.match(/(?:from)\s+(.+?)(?:\.|$)(?:\s*(?:Available|Bal|Balance|ETB|Birr))?/i);if(mf&&!d)d=mf[1].trim();
-  if(!d)d=t.replace(/Available\s*(?:Bal|Balance)[^.]*\./gi,'').replace(/Tx[nr]?[Id]\s*:?\s*\w+/gi,'').replace(/(?:ETB|Birr)\s*[\d,.]+/g,'').replace(/[\d]{6,}/g,'').replace(/\s+/g,' ').trim();
-  return d.length>100?d.substring(0,100)+'...':(d||'Transaction');
-}
-
 function parseSms(msg){
-  var t=msg.body||'',dir=classify(t),amt=parseAmt(t),cat=detectCat(t),desc=extractDesc(t);
-  var d=new Date(msg.date),now=new Date(),day=86400000,diff=now-d,grp;
+  var t=msg.body||'',dir='expense',amt=parseAmt(t),d=new Date(msg.date),now=new Date();
+  if(/received|credited|deposit|from/i.test(t)||/Cr\b/i.test(t))dir='income';
+  var diff=now-d,day=86400000,grp;
   if(diff<day&&d.getDate()===now.getDate())grp='Today';
   else if(diff<2*day)grp='Yesterday';
   else if(diff<7*day)grp='This Week';
   else if(d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear())grp='This Month';
   else grp=d.toLocaleString('default',{month:'long',year:'numeric'});
-  return{id:msg.id,bank:msg.bank||'other',address:msg.address||'',amount:amt,direction:dir,category:cat,description:desc,date:msg.date,group:grp,dateStr:d.toLocaleDateString()+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),raw:t.substring(0,80)};
+  var desc=t.replace(/Tx[nr]?[Id]\s*:?\s*\w+/gi,'').replace(/(?:ETB|Birr)\s*[\d,.]+/g,'').replace(/[\d]{6,}/g,'').replace(/\s+/g,' ').trim();
+  if(desc.length>100)desc=desc.substring(0,100)+'...';
+  return{amount:amt,direction:dir,description:desc||'Transaction',date:msg.date,group:grp,dateStr:d.toLocaleDateString()+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})};
 }
 
-var pendingSms=[];
-function readProgress(count){
-  document.getElementById('progressBar').classList.add('active');
-  document.getElementById('progressLabel').classList.add('active');
-  document.getElementById('progressLabel').textContent='Read '+count+' messages...';
-}
+function readProgress(c){document.getElementById('bar').classList.add('on');document.getElementById('bl').classList.add('on');document.getElementById('bl').textContent='Read '+c+' messages...'}
 function addBatch(arr,last){
   var msgs=(typeof arr==='string'?JSON.parse(arr):arr).map(parseSms).filter(function(m){return m.amount>0});
-  pendingSms=pendingSms.concat(msgs);
-  document.getElementById('progressFill').style.width=last?'100%':'60%';
+  pen=pen.concat(msgs);document.getElementById('bf').style.width=last?'100%':'60%';
 }
 function finalize(){
-  allSms=pendingSms;pendingSms=[];allSms.sort(function(a,b){return b.date-a.date});
-  document.getElementById('progressBar').classList.remove('active');
-  document.getElementById('progressLabel').classList.remove('active');
-  document.getElementById('subtitle').textContent=allSms.length+' transactions';
+  all=pen;pen=[];all.sort(function(a,b){return b.date-a.date});
+  document.getElementById('bar').classList.remove('on');document.getElementById('bl').classList.remove('on');
+  document.getElementById('sub').textContent=all.length+' transactions';
   render();
 }
-
-function render(){renderRange();renderBanks();applyF();}
-function renderRange(){
-  document.querySelectorAll('.range-tab').forEach(function(e){e.classList.toggle('active',e.dataset.r===activeRange)});
-}
-function renderBanks(){
-  var bs=[],h={};allSms.forEach(function(t){if(!h[t.bank]){h[t.bank]=1;bs.push(t.bank)}});
-  var el=document.getElementById('bankTabs');
-  if(!el)return;
-  el.innerHTML='<span class="bank-tab'+(activeBank==='all'?' active':'')+'" onclick="setB(\'all\')">All ('+allSms.length+')</span>';
-  bs.forEach(function(b){el.innerHTML+='<span class="bank-tab'+(activeBank===b?' active':'')+'" onclick="setB(\''+b+'\')">'+bl(b)+' ('+allSms.filter(function(t){return t.bank===b}).length+')</span>'});
-}
-function bl(b){return{telebirr:'Telebirr',cbe:'CBE',dashen:'Dashen'}[b]||b}
-function setB(b){activeBank=b;renderBanks();applyF()}
-function setR(r){activeRange=r;renderRange();renderBanks();applyF();document.getElementById('searchInput').value=''}
-function tF(t){return activeRange==='all'||Date.now()-t.date<{7d:604800000,30d:2592000000,90d:7776000000}[activeRange]}
-
-function applyF(){
-  var q=(document.getElementById('searchInput')||{value:''}).value.toLowerCase();
-  filteredSms=allSms.filter(function(t){
-    if(!tF(t))return false;
-    if(activeBank!=='all'&&t.bank!==activeBank)return false;
-    if(q&&![t.description,t.address,t.raw].some(function(s){return s&&s.toLowerCase().indexOf(q)>=0}))return false;
-    return true;
-  });
-  renderSummary();renderList();
-}
-
-function renderSummary(){
-  var inc=0,exp=0;filteredSms.forEach(function(t){if(t.direction==='income')inc+=t.amount;else exp+=t.amount});
-  document.getElementById('totalIncome').textContent='ETB '+inc.toFixed(2);
-  document.getElementById('totalExpense').textContent='ETB '+exp.toFixed(2);
-  document.getElementById('totalNet').textContent='ETB '+(inc-exp).toFixed(2);
-  var banks={};filteredSms.forEach(function(t){if(!banks[t.bank])banks[t.bank]={inc:0,exp:0};if(t.direction==='income')banks[t.bank].inc+=t.amount;else banks[t.bank].exp+=t.amount});
-  var html='<div class="stat-row">';
-  for(var b in banks)html+='<div class="stat-card"><div class="lbl">'+bl(b)+'</div><div class="val green">+ETB '+banks[b].inc.toFixed(2)+'</div><div class="val red">-ETB '+banks[b].exp.toFixed(2)+'</div></div>';
-  document.getElementById('stats').innerHTML=html+'</div>';
-}
-
-function renderList(){
-  if(!filteredSms.length){document.getElementById('list').innerHTML='<div class="empty">No transactions</div>';return}
+function render(){
+  var inc=0,exp=0;
+  all.forEach(function(t){if(t.direction==='income')inc+=t.amount;else exp+=t.amount});
+  document.getElementById('inc').textContent='ETB '+inc.toFixed(2);
+  document.getElementById('exp').textContent='ETB '+exp.toFixed(2);
+  document.getElementById('net').textContent='ETB '+(inc-exp).toFixed(2);
+  if(!all.length){document.getElementById('content').innerHTML='<div class="load">No transactions found</div>';return}
   var groups={},order=['Today','Yesterday','This Week','This Month'];
-  filteredSms.forEach(function(t){if(!groups[t.group])groups[t.group]=[];groups[t.group].push(t)});
+  all.forEach(function(t){if(!groups[t.group])groups[t.group]=[];groups[t.group].push(t)});
   var keys=Object.keys(groups).sort(function(a,b){var ia=order.indexOf(a),ib=order.indexOf(b);if(ia>=0&&ib>=0)return ia-ib;if(ia>=0)return -1;if(ib>=0)return 1;return new Date(b).getTime()-new Date(a).getTime()||0});
   var html='';
   keys.forEach(function(g){
-    html+='<div class="group-label">'+g+'</div>';
+    html+='<div class="grp">'+g+'</div>';
     groups[g].forEach(function(t){
-      var ic=t.direction==='income'?'↓':'↑',sg=t.direction==='income'?'+':'-';
-      html+='<div class="tx-card"><div class="tx-icon '+t.direction+'">'+ic+'</div><div class="tx-body"><div class="tx-row1"><span class="tx-bank">'+bl(t.bank)+'</span><span class="tx-cat '+t.category+'">'+t.category+'</span></div><div class="tx-desc">'+esc(t.description)+'</div><div class="tx-date">'+t.dateStr+'</div></div><div class="tx-amt '+t.direction+'">'+sg+'ETB '+t.amount.toFixed(2)+'</div></div>';
+      html+='<div class="tx"><div class="d">'+esc(t.description)+'</div><div class="m"><div class="a '+(t.direction)+(t.direction==='income'?'">+':'">-')+'ETB '+t.amount.toFixed(2)+'</div><div class="d2">'+t.dateStr+'</div></div></div>';
     });
   });
-  document.getElementById('list').innerHTML=html;
+  document.getElementById('content').innerHTML=html;
 }
 
-function doRefresh(){
-  if(!isCfg()){showSetup();return}
-  allSms=[];pendingSms=[];
-  document.getElementById('content').innerHTML=
-    '<div class="range-tabs" id="rangeTabs">'+
-    ['7d','30d','90d','all'].map(function(r){return '<span class="range-tab'+(activeRange===r?' active':'')+'" data-r="'+r+'" onclick="setR(\''+r+'\')">'+r+'</span>'}).join('')+
-    '</div>'+
-    '<div class="bank-tabs" id="bankTabs"></div>'+
-    '<div class="filter-bar"><input type="text" id="searchInput" placeholder="Search..." oninput="debF()"></div>'+
-    '<div id="stats"></div>'+
-    '<div id="list"><div class="loading"><div class="spinner"></div></div></div>';
-  document.getElementById('subtitle').textContent='Refreshing...';
-  Android.setFilters(getFs());
-  Android.refresh();
-}
-
-function debF(){clearTimeout(filterTimer);filterTimer=setTimeout(applyF,200)}
-function toggleTheme(){
-  var o=document.getElementById('to');
-  if(o)o.remove();
-  else{
-    var s=document.createElement('style');s.id='to';
-    s.textContent=':root{'+((window.matchMedia('(prefers-color-scheme:dark)').matches)?
-      '--bg:#f0f2f5;--surface:#fff;--text:#1a1a2e;--text2:#555;--text3:#888;--border:#e8e8e8;--income:#0d904f;--expense:#d93025;--accent:#1a73e8;--accent2:#0d47a1;--input-bg:#f5f6fa;--tag-bg:#f0f2f5;--bar-bg:#e8e8e8;--card-shadow:0 2px 12px rgba(0,0,0,.06)}':
-      '--bg:#0f1117;--surface:#1a1d28;--text:#e4e6ed;--text2:#9ca0b0;--text3:#6b7084;--border:#2a2d3a;--income:#34d399;--expense:#f87171;--accent:#60a5fa;--accent2:#3b82f6;--input-bg:#252836;--tag-bg:#252836;--bar-bg:#2a2d3a;--card-shadow:0 2px 12px rgba(0,0,0,.3)}');
-    document.head.appendChild(s);
-  }
-}
-
-function openShare(){
-  var lines=filteredSms.map(function(t){return(t.direction==='income'?'+':'-')+'ETB '+t.amount.toFixed(2)+' | '+bl(t.bank)+' | '+t.category+' | '+t.dateStr+' | '+t.description});
-  var inc=0,exp=0;filteredSms.forEach(function(t){if(t.direction==='income')inc+=t.amount;else exp+=t.amount});
-  var txt='Awdit Report\n'+new Date().toLocaleDateString()+'\n'+'─'.repeat(30)+'\nIncome: ETB '+inc.toFixed(2)+'\nExpense: ETB '+exp.toFixed(2)+'\nNet: ETB '+(inc-exp).toFixed(2)+'\n'+'─'.repeat(30)+'\n\n'+lines.join('\n');
-  if(window.confirm){} // prevent iPad zoom
-  var ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.left='-999px';document.body.appendChild(ta);ta.select();
-  try{document.execCommand('copy')}catch(e){}
-  document.body.removeChild(ta);
-  document.getElementById('subtitle').textContent='Copied!';
-  setTimeout(function(){document.getElementById('subtitle').textContent=allSms.length+' transactions'},1500);
-}
-
-function showError(m){document.getElementById('list').innerHTML='<div class="empty" style="color:var(--expense)">Error: '+esc(m)+'</div>'}
+function pageReady(){if(isC())go();else setup()}
+function smsGranted(){if(isC())go();else setup()}
+function smsDenied(){document.getElementById('content').innerHTML='<div class="load">SMS permission required</div>'}
+function showError(m){document.getElementById('content').innerHTML='<div class="load" style="color:var(--exp)">'+esc(m)+'</div>'}
 
 window.pageReady=pageReady;window.smsGranted=smsGranted;window.smsDenied=smsDenied;
 window.readProgress=readProgress;window.addBatch=addBatch;window.finalize=finalize;window.showError=showError;
