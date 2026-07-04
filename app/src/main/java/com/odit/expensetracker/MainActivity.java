@@ -1,14 +1,13 @@
 package com.odit.expensetracker;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.provider.Telephony;
+import android.telephony.PhoneNumberUtils;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -61,29 +60,37 @@ public class MainActivity extends Activity {
         }
     }
 
+    private String detectBank(String address, String body) {
+        String addr = (address != null) ? address.toLowerCase() : "";
+        String text = (body != null) ? body.toLowerCase() : "";
+        if (addr.equals("127") || addr.contains("telebirr") || text.contains("telebirr")) return "telebirr";
+        if (addr.contains("cbe") || text.contains("cbe birr") || text.contains("cbebirr")) return "cbe";
+        if (addr.contains("dashen") || text.contains("dashen")) return "dashen";
+        return "other";
+    }
+
     private void loadSms() {
         new Thread(() -> {
             try {
-                String[] banks = {"telebirr", "cbe", "dashen"};
                 Uri uri = Uri.parse("content://sms/inbox");
                 String[] projection = {"_id", "address", "body", "date"};
+                String selection = "address LIKE ? OR address = ? OR address LIKE ? OR address LIKE ?";
+                String[] args = new String[]{"%telebirr%", "127", "%cbe%", "%dashen%"};
                 List<JSONObject> allMessages = new ArrayList<>();
 
-                for (String bank : banks) {
-                    String selection = "address LIKE ?";
-                    String[] args = new String[]{"%" + bank + "%"};
-                    try (Cursor c = getContentResolver().query(uri, projection,
-                            selection, args, "date DESC")) {
-                        if (c != null) {
-                            while (c.moveToNext()) {
-                                JSONObject msg = new JSONObject();
-                                msg.put("id", c.getLong(0));
-                                msg.put("address", c.getString(1));
-                                msg.put("body", c.getString(2));
-                                msg.put("date", c.getLong(3));
-                                msg.put("bank", bank);
-                                allMessages.add(msg);
-                            }
+                try (Cursor c = getContentResolver().query(uri, projection,
+                        selection, args, "date DESC")) {
+                    if (c != null) {
+                        while (c.moveToNext()) {
+                            JSONObject msg = new JSONObject();
+                            String address = c.getString(1);
+                            String body = c.getString(2);
+                            msg.put("id", c.getLong(0));
+                            msg.put("address", address);
+                            msg.put("body", body);
+                            msg.put("date", c.getLong(3));
+                            msg.put("bank", detectBank(address, body));
+                            allMessages.add(msg);
                         }
                     }
                 }
