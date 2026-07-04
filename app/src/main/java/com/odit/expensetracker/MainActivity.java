@@ -28,6 +28,7 @@ public class MainActivity extends Activity {
 
         webView = findViewById(R.id.webView);
         webView.getSettings().setJavaScriptEnabled(true);
+        webView.getSettings().setDomStorageEnabled(true);
         webView.addJavascriptInterface(new SmsBridge(), "Android");
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -66,15 +67,6 @@ public class MainActivity extends Activity {
         return "other";
     }
 
-    private boolean needsQuery(String address, String bankFilters) {
-        String addr = address.toLowerCase();
-        for (String filter : bankFilters.split(",")) {
-            String f = filter.trim().toLowerCase();
-            if (addr.contains(f) || addr.equals(f)) return true;
-        }
-        return false;
-    }
-
     private void sendProgress(int count) {
         mainHandler.post(() ->
             webView.evaluateJavascript("window.readProgress(" + count + ")", null));
@@ -91,13 +83,12 @@ public class MainActivity extends Activity {
             try {
                 Uri uri = Uri.parse("content://sms/inbox");
                 String[] projection = {"_id", "address", "body", "date"};
-                String selection = "address LIKE ? OR address = ? OR address LIKE ? OR address LIKE ?";
-                String[] args = new String[]{"%telebirr%", "127", "%cbe%", "%dashen%"};
+                String selection = buildSelection();
                 List<JSONObject> batch = new ArrayList<>();
                 int count = 0;
 
                 try (Cursor c = getContentResolver().query(uri, projection,
-                        selection, args, "date DESC")) {
+                        selection, filterArgs, "date DESC")) {
                     if (c != null) {
                         while (c.moveToNext()) {
                             JSONObject msg = new JSONObject();
@@ -134,10 +125,35 @@ public class MainActivity extends Activity {
         }).start();
     }
 
+    private String[] filterArgs = new String[]{"%telebirr%", "127", "%cbe%", "%dashen%"};
+
     private class SmsBridge {
+        @JavascriptInterface
+        public void setFilters(String filters) {
+            if (filters.isEmpty()) {
+                filterArgs = new String[]{"%telebirr%", "127", "%cbe%", "%dashen%"};
+            } else {
+                String[] parts = filters.split(",");
+                filterArgs = new String[parts.length];
+                for (int i = 0; i < parts.length; i++) {
+                    String p = parts[i].trim();
+                    filterArgs[i] = p.matches("\\d+") ? p : "%" + p + "%";
+                }
+            }
+        }
+
         @JavascriptInterface
         public void refresh() {
             loadSms();
         }
+    }
+
+    private String buildSelection() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < filterArgs.length; i++) {
+            if (i > 0) sb.append(" OR ");
+            sb.append("address LIKE ?");
+        }
+        return sb.toString();
     }
 }
