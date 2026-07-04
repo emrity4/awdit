@@ -32,10 +32,7 @@ public class MainActivity extends Activity {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
-                if (checkSelfPermission(android.Manifest.permission.READ_SMS)
-                        == PackageManager.PERMISSION_GRANTED) {
-                    loadSms();
-                }
+                webView.evaluateJavascript("window.pageReady()", null);
             }
         });
         webView.loadUrl("file:///android_asset/index.html");
@@ -52,9 +49,10 @@ public class MainActivity extends Activity {
                                             int[] grantResults) {
         if (requestCode == SMS_PERMISSION_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                loadSms();
+                webView.evaluateJavascript("window.smsGranted()", null);
             } else {
                 Toast.makeText(this, "SMS permission required", Toast.LENGTH_LONG).show();
+                webView.evaluateJavascript("window.smsDenied()", null);
             }
         }
     }
@@ -66,6 +64,15 @@ public class MainActivity extends Activity {
         if (addr.contains("cbe") || text.contains("cbe birr") || text.contains("cbebirr")) return "cbe";
         if (addr.contains("dashen") || text.contains("dashen")) return "dashen";
         return "other";
+    }
+
+    private boolean needsQuery(String address, String bankFilters) {
+        String addr = address.toLowerCase();
+        for (String filter : bankFilters.split(",")) {
+            String f = filter.trim().toLowerCase();
+            if (addr.contains(f) || addr.equals(f)) return true;
+        }
+        return false;
     }
 
     private void sendProgress(int count) {
