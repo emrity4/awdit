@@ -95,8 +95,8 @@ body{background:var(--bg);color:var(--text);padding-bottom:24px;min-height:100vh
 .share-popup .copy-btn{display:block;width:100%;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;margin-top:8px;cursor:pointer}
 .overlay{position:fixed;top:0;right:0;bottom:0;left:0;background:var(--overlay-bg);z-index:99;opacity:0;pointer-events:none;transition:opacity .3s;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
 .overlay.show{opacity:1;pointer-events:auto}
-.setup{position:fixed;top:24px;right:24px;bottom:24px;left:24px;z-index:200;background:var(--surface);border-radius:20px;padding:28px 24px;box-shadow:0 8px 40px rgba(0,0,0,.2);overflow-y:auto;display:none;max-width:400px;margin:auto;max-height:80vh}
-.setup.open{display:block}
+.setup{position:fixed;top:24px;right:24px;bottom:24px;left:24px;z-index:200;background:var(--surface);border-radius:20px;padding:28px 24px;box-shadow:0 8px 40px rgba(0,0,0,.2);overflow-y:auto;max-width:400px;margin:auto;max-height:80vh}
+.setup.hidden{display:none}
 .setup h2{font-size:20px;margin-bottom:4px}
 .setup p{font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.5}
 .setup label{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--input-bg);border-radius:10px;margin-bottom:6px;cursor:pointer;transition:background .2s}
@@ -111,15 +111,15 @@ body{background:var(--bg);color:var(--text);padding-bottom:24px;min-height:100vh
 .setup .start-btn{display:block;width:100%;padding:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;margin-top:16px;cursor:pointer;transition:opacity .2s}
 .setup .start-btn:active{opacity:.8}
 .setup .start-btn:disabled{opacity:.5}
-.overlay-setup{position:fixed;top:0;right:0;bottom:0;left:0;background:var(--overlay-bg);z-index:199;display:none;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
-.overlay-setup.open{display:block}
+.overlay-setup{position:fixed;top:0;right:0;bottom:0;left:0;background:var(--overlay-bg);z-index:199;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.overlay-setup.hidden{display:none}
 .setup-open .setup-btn{opacity:1}
 </style>
 </head>
 <body>
 
-<div class="overlay-setup" id="setupOverlay"></div>
-<div class="setup" id="setupPanel">
+<div class="overlay-setup hidden" id="setupOverlay"></div>
+<div class="setup hidden" id="setupPanel">
   <h2>Get Started</h2>
   <p>Select which financial services to track. Awdit will read SMS from these senders.</p>
   <div id="bankChecks"></div>
@@ -190,28 +190,27 @@ function getFilterStr(){
   var custom=(localStorage.getItem('awdit_custom')||'').split(',').map(function(s){return s.trim()}).filter(Boolean);
   return banks.concat(custom).join(',');
 }
-function pageReady(){
-  if(localStorage.getItem('awdit_choice')) { allSms=[]; Android.setFilters(getFilterStr()); Android.refresh(); }
-  else loadSetup();
+function isConfigured(){return !!localStorage.getItem('awdit_choice')}
+function startApp(){
+  if(isConfigured()) { document.getElementById('setupPanel').classList.add('hidden'); document.getElementById('setupOverlay').classList.add('hidden'); allSms=[]; Android.setFilters(getFilterStr()); Android.refresh(); }
+  else showSetup();
 }
-function smsGranted(){
-  if(localStorage.getItem('awdit_choice')) { allSms=[]; Android.setFilters(getFilterStr()); Android.refresh(); }
-  else loadSetup();
-}
+function pageReady(){startApp()}
+function smsGranted(){startApp()}
 function smsDenied(){
   document.getElementById('content').innerHTML='<div class="empty">SMS permission is required to read transactions.</div>';
 }
 
-function loadSetup(){
-  document.getElementById('setupPanel').classList.add('open');
-  document.getElementById('setupOverlay').classList.add('open');
-  const saved=JSON.parse(localStorage.getItem('awdit_banks')||'["telebirr","cbe","dashen"]');
-  const custom=localStorage.getItem('awdit_custom')||'';
+function showSetup(){
+  document.getElementById('setupPanel').classList.remove('hidden');
+  document.getElementById('setupOverlay').classList.remove('hidden');
+  var saved=JSON.parse(localStorage.getItem('awdit_banks')||'["telebirr","cbe","dashen"]');
+  var custom=localStorage.getItem('awdit_custom')||'';
   document.getElementById('customSenders').value=custom;
-  document.getElementById('bankChecks').innerHTML=BANKS.map(b=>
-    '<label><input type="checkbox" value="'+b.id+'"'+(saved.includes(b.id)?' checked':'')+'>'+
-    '<div><div class="label-text">'+b.label+'</div><div class="label-hint">'+b.hint+'</div></div></label>'
-  ).join('');
+  document.getElementById('bankChecks').innerHTML=BANKS.map(function(b){
+    return '<label><input type="checkbox" value="'+b.id+'"'+(saved.includes(b.id)?' checked':'')+'>'+
+    '<div><div class="label-text">'+b.label+'</div><div class="label-hint">'+b.hint+'</div></div></label>';
+  }).join('');
 }
 
 function startTracking(){
@@ -221,18 +220,18 @@ function startTracking(){
   localStorage.setItem('awdit_banks',JSON.stringify(checks));
   localStorage.setItem('awdit_custom',custom);
   localStorage.setItem('awdit_choice','1');
-  document.getElementById('setupPanel').classList.remove('open');
-  document.getElementById('setupOverlay').classList.remove('open');
+  document.getElementById('setupPanel').classList.add('hidden');
+  document.getElementById('setupOverlay').classList.add('hidden');
   document.getElementById('subtitle').textContent='Reading...';
   Android.setFilters(getFilterStr());
   Android.refresh();
 }
 
 function openSettings(){
-  document.getElementById('setupPanel').classList.add('open');
-  document.getElementById('setupOverlay').classList.add('open');
-  const saved=JSON.parse(localStorage.getItem('awdit_banks')||'["telebirr","cbe","dashen"]');
-  document.querySelectorAll('#bankChecks input').forEach(c=>c.checked=saved.includes(c.value));
+  document.getElementById('setupPanel').classList.remove('hidden');
+  document.getElementById('setupOverlay').classList.remove('hidden');
+  var saved=JSON.parse(localStorage.getItem('awdit_banks')||'["telebirr","cbe","dashen"]');
+  document.querySelectorAll('#bankChecks input').forEach(function(c){c.checked=saved.includes(c.value)});
   document.getElementById('customSenders').value=localStorage.getItem('awdit_custom')||'';
 }
 
@@ -416,7 +415,7 @@ function renderList(){
 }
 
 function refresh(){
-  if(!localStorage.getItem('awdit_choice')){loadSetup();return}
+  if(!isConfigured()){showSetup();return}
   allSms=[];pendingSms=[];readingComplete=false;
   document.getElementById('content').innerHTML='<div class="loading"><div class="spinner"></div></div>';
   document.getElementById('subtitle').textContent='Refreshing...';
