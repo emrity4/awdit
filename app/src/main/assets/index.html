@@ -74,17 +74,31 @@ body{background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:24px
 <div id="content"></div>
 
 <script>
-var all=[],fil=[],pen=[],timer;
+var all=[],pen=[];
 function isC(){return !!localStorage.getItem('c')}
+function gf(){
+  var b=JSON.parse(localStorage.getItem('b')||'["telebirr","cbe","dashen"]');
+  var c=(localStorage.getItem('x')||'127').split(',').map(function(s){return s.trim()}).filter(Boolean);
+  return b.concat(c).join(',');
+}
 
 function setup(){
-  var c=localStorage.getItem('c');
+  var b=JSON.parse(localStorage.getItem('b')||'["telebirr","cbe","dashen"]');
+  var c=localStorage.getItem('x')||'127';
   document.getElementById('content').innerHTML=
-    '<div class="s-card"><h2>Get Started</h2><p>Awdit reads Telebirr SMS to track your spending.</p>'+
-    '<label><input type="checkbox" id="chk" checked><div><div class="lt">Telebirr</div><div class="lh">Shortcode 127</div></div></label>'+
+    '<div class="s-card"><h2>Get Started</h2><p>Select banks to track.</p>'+
+    '<div id="bc">'+
+    [{i:'telebirr',l:'Telebirr',h:'Shortcode 127'},{i:'cbe',l:'CBE Birr',h:'Commercial Bank'},{i:'dashen',l:'Dashen Bank',h:'Dashen Bank S.C.'}].map(function(b2){return '<label><input type="checkbox" value="'+b2.i+'"'+(b.indexOf(b2.i)>=0?' checked':'')+'><div><div class="lt">'+b2.l+'</div><div class="lh">'+b2.h+'</div></div></label>'}).join('')+
+    '</div>'+
+    '<div style="margin-top:12px"><label style="background:none;padding:0;margin-bottom:4px;font-size:12px;color:var(--text2)">Extra senders (comma-separated)</label><input type="text" id="cs" value="'+c+'" placeholder="e.g. 127, 8484" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;background:var(--bg);color:var(--text)"></div>'+
     '<button class="sb" onclick="st()">Start Tracking</button></div>';
 }
 function st(){
+  var cks=[];document.querySelectorAll('#bc input:checked').forEach(function(e){cks.push(e.value)});
+  var cs=document.getElementById('cs').value.trim();
+  if(!cks.length&&!cs)return;
+  localStorage.setItem('b',JSON.stringify(cks));
+  localStorage.setItem('x',cs);
   localStorage.setItem('c','1');
   document.getElementById('sub').textContent='Reading...';
   go();
@@ -94,7 +108,7 @@ function go(){
   all=[];pen=[];
   document.getElementById('content').innerHTML='<div class="load"><div class="spin"></div></div>';
   document.getElementById('sub').textContent='Refreshing...';
-  Android.setFilters('telebirr,127');
+  Android.setFilters(gf());
   Android.refresh();
 }
 
