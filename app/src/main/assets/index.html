@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Awdit</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+body{background:#f0f2f5;padding-bottom:80px}
+.header{background:#1a73e8;color:#fff;padding:16px;position:sticky;top:0;z-index:10}
+.header h1{font-size:20px;font-weight:600}
+.header .sub{font-size:12px;opacity:.9;margin-top:4px}
+.summary{display:flex;gap:12px;padding:16px;margin:-8px 16px 0;background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.summary > div{flex:1;text-align:center}
+.summary .label{font-size:11px;color:#666;text-transform:uppercase}
+.summary .amount{font-size:20px;font-weight:700;margin-top:4px}
+.summary .income .amount{color:#0d904f}
+.summary .expense .amount{color:#d93025}
+.summary .balance .amount{color:#1a73e8}
+.bank-tabs{display:flex;gap:8px;padding:12px 16px;overflow-x:auto}
+.bank-tab{padding:8px 16px;border-radius:20px;border:1px solid #ddd;background:#fff;font-size:13px;cursor:pointer;white-space:nowrap;transition:all .2s}
+.bank-tab.active{background:#1a73e8;color:#fff;border-color:#1a73e8}
+.stats-row{display:flex;gap:12px;padding:0 16px 12px;overflow-x:auto}
+.stat-card{flex:1;min-width:140px;background:#fff;border-radius:8px;padding:10px 12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.stat-card .label{font-size:11px;color:#666}
+.stat-card .value{font-size:16px;font-weight:600;margin-top:2px}
+.tx-list{padding:0 16px}
+.tx-card{background:#fff;border-radius:10px;padding:12px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);display:flex;align-items:flex-start;gap:12px}
+.tx-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.tx-icon.income{background:#e6f4ea;color:#0d904f}
+.tx-icon.expense{background:#fce8e6;color:#d93025}
+.tx-body{flex:1;min-width:0}
+.tx-amount{font-size:17px;font-weight:700;text-align:right;flex-shrink:0}
+.tx-amount.income{color:#0d904f}
+.tx-amount.expense{color:#d93025}
+.tx-bank{font-size:11px;color:#666;margin-top:1px}
+.tx-desc{font-size:13px;color:#333;margin-top:2px;word-break:break-word}
+.tx-date{font-size:11px;color:#999;margin-top:2px}
+.empty{padding:40px;text-align:center;color:#999;font-size:14px}
+.permit-msg{background:#fff3e0;padding:40px 20px;text-align:center;margin:40px 16px;border-radius:12px}
+.permit-msg p{color:#e65100;font-size:14px;line-height:1.6}
+.loading{text-align:center;padding:40px;color:#666}
+.spinner{width:32px;height:32px;border:3px solid #e0e0e0;border-top-color:#1a73e8;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.filter-bar{display:flex;gap:8px;padding:0 16px 12px}
+.filter-bar input{flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;outline:none}
+.filter-bar input:focus{border-color:#1a73e8}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Awdit</h1>
+  <div class="sub" id="subtitle">Loading messages...</div>
+</div>
+
+<div class="summary" id="summary">
+  <div class="income"><div class="label">Income</div><div class="amount" id="totalIncome">ETB 0</div></div>
+  <div class="expense"><div class="label">Expense</div><div class="amount" id="totalExpense">ETB 0</div></div>
+  <div class="balance"><div class="label">Balance</div><div class="amount" id="totalBalance">ETB 0</div></div>
+</div>
+
+<div class="bank-tabs" id="bankTabs"></div>
+
+<div class="filter-bar">
+  <input type="text" id="searchInput" placeholder="Search transactions..." oninput="applyFilters()">
+</div>
+
+<div class="stats-row" id="statsRow"></div>
+
+<div id="content"><div class="loading"><div class="spinner"></div>Reading messages...</div></div>
+
+<script>
+let allSms = [];
+let filteredSms = [];
+let activeBank = 'all';
+
+function parseAmount(text) {
+  const patterns = [
+    /(?:ETB|Birr)\s*([\d,]+(?:\.\d{2})?)/i,
+    /([\d,]+(?:\.\d{2})?)\s*(?:ETB|Birr)/i,
+    /(?:credited|debited|received|paid|sent|withdrawal|purchase|payment)\s+(?:of|with|is)?\s*(?:ETB|Birr)?\s*([\d,]+(?:\.\d{2})?)/i,
+    /(?:ETB|Birr)\s*([\d,]+)/i,
+  ];
+  for (const re of patterns) {
+    const m = text.match(re);
+    if (m) return parseFloat(m[1].replace(/,/g,''));
+  }
+  return null;
+}
+
+function classify(text, bank) {
+  const lower = text.toLowerCase();
+  const incomeWords = ['received','credited','credited with','credit of','deposit','payment from','transferred to your','from '];
+  const expenseWords = ['debited','debit','payment of','paid to','withdrawal','purchase','sent to','transfer to','airtime','withdraw','payment to','to '];
+  const receivePatterns = [
+    /(?:received|credited|credited with|credited to|deposit)\s+(?:ETB|Birr)?\s*[\d,]+/i,
+    /(?:ETB|Birr)\s*[\d,.]+\s+(?:received|credited|from)/i,
+    /from\s+\w+\s+(?:has\s+)?(?:sent|transferred|paid)/i,
+    /(?:payment|transfer)\s+from/i,
+  ];
+  const expensePatterns = [
+    /(?:debited|debit|paid|payment of|withdrawal|purchase of|sent to|transfer to|airtime|withdraw)\s+(?:ETB|Birr)?\s*[\d,]+/i,
+    /(?:ETB|Birr)\s*[\d,.]+\s+(?:debited|paid|sent|withdrawn|purchased)/i,
+    /(?:payment|transfer)\s+to/i,
+  ];
+  for (const p of receivePatterns) { if (p.test(text)) return 'income'; }
+  for (const p of expensePatterns) { if (p.test(text)) return 'expense'; }
+  const incCount = incomeWords.filter(w => lower.includes(w)).length;
+  const expCount = expenseWords.filter(w => lower.includes(w)).length;
+  if (incCount > expCount) return 'income';
+  if (expCount > incCount) return 'expense';
+  return 'expense';
+}
+
+function extractDescription(text, bank) {
+  const lower = text.toLowerCase();
+  let desc = '';
+  const toMatch = text.match(/(?:to|for)\s+(.+?)(?:\.|$|\.\s*(?:Available|Balance|ETB|Birr|\d{4}))/i);
+  if (toMatch) desc = toMatch[1].trim();
+  const fromMatch = text.match(/(?:from)\s+(.+?)(?:\.|$|\.\s*(?:Available|Balance|ETB|Birr))/i);
+  if (fromMatch && !desc) desc = fromMatch[1].trim();
+  if (!desc) {
+    const clean = text.replace(/(?:ETB|Birr)\s*[\d,.]+/g,'').replace(/[\d,.]+(?:\s*(?:ETB|Birr))?/g,'').replace(/Available\s*(?:Bal|Balance)[^.]*\./gi,'').trim();
+    desc = clean.length > 80 ? clean.substring(0,80)+'...' : clean;
+  }
+  return desc || 'Transaction';
+}
+
+function parseSms(msg) {
+  const text = msg.body;
+  const bank = msg.bank || 'unknown';
+  const dir = classify(text, bank);
+  const amt = parseAmount(text);
+  const desc = extractDescription(text, bank);
+  const d = new Date(msg.date);
+  const dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  return {
+    id: msg.id,
+    bank: bank,
+    address: msg.address,
+    amount: amt || 0,
+    direction: dir,
+    description: desc,
+    date: msg.date,
+    dateStr: dateStr,
+    body: text,
+    raw: text.substring(0,100)
+  };
+}
+
+function renderSms(jsonArr) {
+  allSms = (typeof jsonArr === 'string' ? JSON.parse(jsonArr) : jsonArr)
+    .map(parseSms)
+    .filter(t => t.amount > 0);
+  allSms.sort((a,b) => b.date - a.date);
+  document.getElementById('subtitle').textContent = allSms.length + ' transactions found';
+  render();
+}
+
+function getBankLabel(bank) {
+  const map = {telebirr:'Telebirr',cbe:'CBE Birr',dashen:'Dashen Bank'};
+  return map[bank] || bank;
+}
+
+function render() {
+  renderTabs();
+  applyFilters();
+}
+
+function renderTabs() {
+  const banks = [...new Set(allSms.map(t => t.bank))];
+  const counts = {};
+  banks.forEach(b => counts[b] = allSms.filter(t => t.bank === b).length);
+  const html = ['<div class="bank-tab'+(activeBank==='all'?' active':'')+'" onclick="setBank(\'all\')">All ('+allSms.length+')</div>'];
+  banks.forEach(b => {
+    html.push('<div class="bank-tab'+(activeBank===b?' active':'')+'" onclick="setBank(\''+b+'\')">'+getBankLabel(b)+' ('+counts[b]+')</div>');
+  });
+  document.getElementById('bankTabs').innerHTML = html.join('');
+}
+
+function setBank(bank) {
+  activeBank = bank;
+  renderTabs();
+  applyFilters();
+}
+
+function applyFilters() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  filteredSms = allSms.filter(t => {
+    if (activeBank !== 'all' && t.bank !== activeBank) return false;
+    if (q && !t.description.toLowerCase().includes(q) && !t.raw.toLowerCase().includes(q) && !t.address.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  renderSummary();
+  renderStats();
+  renderList();
+}
+
+function renderSummary() {
+  const income = filteredSms.filter(t => t.direction === 'income').reduce((s,t) => s + t.amount, 0);
+  const expense = filteredSms.filter(t => t.direction === 'expense').reduce((s,t) => s + t.amount, 0);
+  document.getElementById('totalIncome').textContent = 'ETB ' + income.toFixed(2);
+  document.getElementById('totalExpense').textContent = 'ETB ' + expense.toFixed(2);
+  document.getElementById('totalBalance').textContent = 'ETB ' + (income - expense).toFixed(2);
+}
+
+function renderStats() {
+  const banks = [...new Set(filteredSms.map(t => t.bank))];
+  const html = banks.map(b => {
+    const tx = filteredSms.filter(t => t.bank === b);
+    const inc = tx.filter(t => t.direction === 'income').reduce((s,t) => s + t.amount, 0);
+    const exp = tx.filter(t => t.direction === 'expense').reduce((s,t) => s + t.amount, 0);
+    return '<div class="stat-card"><div class="label">'+getBankLabel(b)+'</div><div class="value" style="color:#0d904f">+ETB '+inc.toFixed(2)+'</div><div class="value" style="color:#d93025">-ETB '+exp.toFixed(2)+'</div></div>';
+  }).join('');
+  document.getElementById('statsRow').innerHTML = html || '<div class="empty">No transactions</div>';
+}
+
+function renderList() {
+  if (!filteredSms.length) {
+    document.getElementById('content').innerHTML = '<div class="empty">No matching transactions found</div>';
+    return;
+  }
+  const html = filteredSms.map(t => {
+    const icon = t.direction === 'income' ? '↓' : '↑';
+    const cls = t.direction;
+    const sign = t.direction === 'income' ? '+' : '-';
+    return '<div class="tx-card">' +
+      '<div class="tx-icon '+cls+'">'+icon+'</div>' +
+      '<div class="tx-body">' +
+        '<div class="tx-bank">'+getBankLabel(t.bank)+'</div>' +
+        '<div class="tx-desc">'+escapeHtml(t.description)+'</div>' +
+        '<div class="tx-date">'+t.dateStr+'</div>' +
+      '</div>' +
+      '<div class="tx-amount '+cls+'">'+sign+'ETB '+t.amount.toFixed(2)+'</div>' +
+    '</div>';
+  }).join('');
+  document.getElementById('content').innerHTML = html;
+}
+
+function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function showError(msg) {
+  document.getElementById('content').innerHTML = '<div class="empty" style="color:#d93025">Error: '+escapeHtml(msg)+'</div>';
+}
+
+window.renderSms = renderSms;
+window.showError = showError;
+</script>
+</body>
+</html>
