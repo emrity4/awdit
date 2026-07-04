@@ -7,7 +7,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.telephony.PhoneNumberUtils;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -69,6 +68,17 @@ public class MainActivity extends Activity {
         return "other";
     }
 
+    private void sendProgress(int count) {
+        mainHandler.post(() ->
+            webView.evaluateJavascript("window.readProgress(" + count + ")", null));
+    }
+
+    private void sendBatch(JSONArray batch, boolean last) {
+        String json = batch.toString();
+        mainHandler.post(() ->
+            webView.evaluateJavascript("window.addBatch(" + json + "," + last + ")", null));
+    }
+
     private void loadSms() {
         new Thread(() -> {
             try {
@@ -76,7 +86,8 @@ public class MainActivity extends Activity {
                 String[] projection = {"_id", "address", "body", "date"};
                 String selection = "address LIKE ? OR address = ? OR address LIKE ? OR address LIKE ?";
                 String[] args = new String[]{"%telebirr%", "127", "%cbe%", "%dashen%"};
-                List<JSONObject> allMessages = new ArrayList<>();
+                List<JSONObject> batch = new ArrayList<>();
+                int count = 0;
 
                 try (Cursor c = getContentResolver().query(uri, projection,
                         selection, args, "date DESC")) {
@@ -90,16 +101,24 @@ public class MainActivity extends Activity {
                             msg.put("body", body);
                             msg.put("date", c.getLong(3));
                             msg.put("bank", detectBank(address, body));
-                            allMessages.add(msg);
+                            batch.add(msg);
+                            count++;
+
+                            if (batch.size() >= 100) {
+                                sendBatch(new JSONArray(batch), false);
+                                batch.clear();
+                                sendProgress(count);
+                            }
                         }
                     }
                 }
 
-                JSONArray arr = new JSONArray(allMessages);
-                String json = arr.toString();
+                if (!batch.isEmpty()) {
+                    sendBatch(new JSONArray(batch), false);
+                }
+                sendProgress(count);
                 mainHandler.post(() ->
-                    webView.evaluateJavascript(
-                        "window.renderSms(" + json + ")", null));
+                    webView.evaluateJavascript("window.finalize()", null));
             } catch (Exception e) {
                 mainHandler.post(() ->
                     webView.evaluateJavascript(
