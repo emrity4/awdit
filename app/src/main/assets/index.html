@@ -112,6 +112,7 @@ function go(){
   Android.refresh();
 }
 
+var C='(?:ETB|Birr|Br\\.?)';
 function cleanAmt(s){
   s=s.replace(/\s/g,'');
   if(/\.\d{2}$/.test(s))return parseFloat(s.replace(/,/g,''));
@@ -120,16 +121,21 @@ function cleanAmt(s){
   return parseFloat(s.replace(/,/g,''));
 }
 function parseAmt(t){
-  var bl=/^(?:your\s+)?(?:current\s+)?(?:eMoney|emoney|balance|bal)\s*(?::|is)?\s*(?:ETB|Birr)?\s*[\d,]+(?:\.\d{2})?\s*$/i;
+  var bl=new RegExp('^(?:your\\s+)?(?:current\\s+)?(?:eMoney|emoney|balance|bal)\\s*(?::|is)?\\s*'+C+'\\s*[\\d,]+(?:\\.\\d{2})?\\.?\\s*$','i');
   if(bl.test(t.trim()))return null;
-  var c=t.replace(/(?:current|available)\s*(?:eMoney|emoney|bal|balance)[^.]*\.?/gi,' ')
-          .replace(/(?:bal|balance)\s*:\s*(?:ETB|Birr)?\s*[\d,.]+/gi,' ')
-          .replace(/ETB\s*0\.00/gi,' ').replace(/Tx[nr]?[Id]\s*:?\s*\w+/gi,' ');
-  var rs=[/(?:received|credited|deposit|payment\s+from)\s+(?:of\s+)?(?:ETB|Birr)?\s*([\d,]+(?:\.\d{2})?)/i,/(?:debited|debit|paid|payment\s+of|withdrawal|withdraw|purchase|sent|airtime|transfer\s+to)\s+(?:of\s+)?(?:ETB|Birr)?\s*([\d,]+(?:\.\d{2})?)/i,/(?:ETB|Birr)\s*([\d,]+(?:\.\d{2})?)\s+(?:received|credited|debited|paid|sent|withdrawn)/i,/(?:credited|debited)\s+(?:with\s+)?(?:ETB|Birr)?\s*([\d,]+(?:\.\d{2})?)/i,/(?:Cr|Dr)\s+(?:ETB|Birr)?\s*([\d,]+(?:\.\d{2})?)/i];
+  var balR=new RegExp('(?:current|available)\\s*(?:eMoney|emoney|bal|balance)\\s*(?::|is\\s+)?'+C+'\\s*[\\d,]+(?:\\.\\d{2})?\\s*\\.?','gi');
+  var balR2=new RegExp('(?:bal|balance)\\s*:\\s*'+C+'?\\s*[\\d,.]+','gi');
+  var c=t.replace(balR,' ').replace(balR2,' ').replace(/ETB\s*0\.00/gi,' ').replace(/Tx[nr]?[Id]\s*:?\s*\w+/gi,' ');
+  var incR=new RegExp('(?:received|credited|deposit|payment\\s+from)\\s+(?:of\\s+)?'+C+'?\\s*([\\d,]+(?:\\.\\d{2})?)','i');
+  var expR=new RegExp('(?:debited|debit|paid|payment\\s+of|withdrawal|withdraw|purchase|sent|airtime|transfer\\s+to|bought)\\s+(?:of\\s+)?'+C+'?\\s*([\\d,]+(?:\\.\\d{2})?)','i');
+  var p1R=new RegExp(C+'\\s*([\\d,]+(?:\\.\\d{2})?)\\s+(?:received|credited|debited|paid|sent|withdrawn)','i');
+  var p2R=new RegExp('(?:credited|debited)\\s+(?:with\\s+)?'+C+'?\\s*([\\d,]+(?:\\.\\d{2})?)','i');
+  var p3R=new RegExp('(?:Cr|Dr)\\s+'+C+'?\\s*([\\d,]+(?:\\.\\d{2})?)','i');
+  var rs=[incR,expR,p1R,p2R,p3R];
   for(var i=0;i<rs.length;i++){var m=c.match(rs[i]);if(m)return cleanAmt(m[1])}
-  var f=c.match(/(?:ETB|Birr)\s*([\d,]+(?:\.\d{2})?)/i);
+  var f=c.match(new RegExp(C+'\\s*([\\d,]+(?:\\.\\d{2})?)','i'));
   if(f){var n=cleanAmt(f[1]);if(n>0)return n}
-  var a=c.match(/([\d,]+(?:\.\d{2})?)\s*(?:ETB|Birr)/i);
+  var a=c.match(new RegExp('([\\d,]+(?:\\.\\d{2})?)\\s*'+C,'i'));
   if(a){var n2=cleanAmt(a[1]);if(n2>0)return n2}
   return null;
 }
@@ -138,14 +144,14 @@ function parseSms(msg){
   if(amt===null||amt===0)return null;
   if(/airtime|recharge|points?\b/i.test(t))return null;
   var dir='expense';
-  if(/received|credited|deposit|from\s+\S+\s+(?:sent|transferred|paid)/i.test(t)||/Cr\b/i.test(t))dir='income';
+  if(/received|credited|deposit|payment\s+from/i.test(t)||/Cr\b/i.test(t))dir='income';
   var d=new Date(msg.date),now=new Date(),diff=now-d,day=86400000,grp;
   if(diff<day&&d.getDate()===now.getDate())grp='Today';
   else if(diff<2*day)grp='Yesterday';
   else if(diff<7*day)grp='This Week';
   else if(d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear())grp='This Month';
   else grp=d.toLocaleString('default',{month:'long',year:'numeric'});
-  var desc=t.replace(/Tx[nr]?[Id]\s*:?\s*\w+/gi,'').replace(/(?:ETB|Birr)\s*[\d,.]+/g,'').replace(/[\d]{6,}/g,'').replace(/\s+/g,' ').trim();
+  var desc=t.replace(/Tx[nr]?[Id]\s*:?\s*\w+/gi,'').replace(new RegExp(C+'\\s*[\\d,.]+','gi'),'').replace(/[\d]{6,}/g,'').replace(/\s+/g,' ').trim();
   if(desc.length>100)desc=desc.substring(0,100)+'...';
   return{amount:amt,direction:dir,description:desc||'Transaction',date:msg.date,group:grp,dateStr:d.toLocaleDateString()+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})};
 }
