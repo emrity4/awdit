@@ -14,8 +14,8 @@
   --primary:#564338;--accent:#e5e0dc;--active-bg:#564338;--active-text:#fff;
   --inc:#6b8f71;--exp:#b84c4c;--info:#4a7db4;--warn:#c9953a;
   --tag-bg:rgba(41,38,36,.06);--glow:rgba(86,67,56,.1);
-  --font:'SF Mono',SFMono-Regular,monospace;
-  --mono:'SF Mono',SFMono-Regular,monospace;
+  --font:Lexend,ui-sans-serif,sans-serif,system-ui;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
   --g1:#564338;--g2:#e5e0dc;--g3:#fdfcfc;
 }
 @media(prefers-color-scheme:dark){
@@ -100,11 +100,8 @@ body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%
 .vr{display:flex;gap:8px;margin:0 0 8px}
 .vc{flex:1;padding:12px}
 .vc h3{font-size:12px;color:var(--mute);margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:.6px}
-.ch{display:flex;align-items:flex-end;height:46px;gap:2px;padding-top:4px;animation:fadeUp .3s ease both}
-.cc{flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:1px}
-.cb{border-radius:2px 2px 0 0;min-height:1px;transition:height .6s cubic-bezier(.34,1.56,.64,1)}
-.cb.inc{background:var(--inc)}
-.cb.exp{background:var(--exp)}
+.ch{animation:fadeUp .3s ease both}
+.ch svg{display:block}
 
 .dw{width:72px;height:72px;border-radius:50%;margin:2px auto 0;position:relative}
 .di{position:absolute;top:0;right:0;bottom:0;left:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--mute);flex-direction:column;gap:1px}
@@ -436,11 +433,30 @@ function renderChart(fl){
     if(!ws[t.weekStart])ws[t.weekStart]={i:0,e:0};
     if(t.direction==='income')ws[t.weekStart].i+=t.amount;else ws[t.weekStart].e+=t.amount;
   });
-  var sorted=Object.entries(ws).sort(function(a,b){return a[0]-b[0]}).slice(-12);
-  var max=Math.max.apply(null,sorted.map(function(v){return Math.max(v[1].i,v[1].e)}))||1;
-  document.getElementById('ch').innerHTML=sorted.map(function(v){
-    return '<div class="cc"><div class="cb exp" style="height:'+(v[1].e/max*100)+'%"></div><div class="cb inc" style="height:'+(v[1].i/max*100)+'%"></div></div>';
-  }).join('');
+  var sorted=Object.entries(ws).sort(function(a,b){return a[0]-b[0]}).slice(-8);
+  var el=document.getElementById('ch');
+  if(!sorted.length){el.innerHTML='<div style="color:var(--mute);text-align:center;padding:24px 0;font-size:13px">no weekly data</div>';return}
+  var max=0;sorted.forEach(function(v){max=Math.max(max,v[1].i,v[1].e)});max=max||1;
+  var w=Math.max(120,20+sorted.length*32),h=70,padL=10,padR=10,padT=4,padB=16,plotW=w-padL-padR,plotH=h-padT-padB;
+  function pts(arr,field){
+    return arr.map(function(v,i){
+      var x=padL+i*plotW/(sorted.length-1||1),y=padT+plotH-(v[1][field]/max*plotH);
+      return x.toFixed(1)+','+y.toFixed(1);
+    }).join(' ');
+  }
+  var iPts=pts(sorted,'i'),ePts=pts(sorted,'e');
+  var base=padL+','+(padT+plotH)+' '+(w-padR)+','+(padT+plotH);
+  var s=getComputedStyle(document.documentElement);
+  var ic=s.getPropertyValue('--inc').trim(),ec=s.getPropertyValue('--exp').trim();
+  function hexToRgb(h){var r=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h);return r?parseInt(r[1],16)+','+parseInt(r[2],16)+','+parseInt(r[3],16):'100,100,100'}
+  el.innerHTML='<svg viewBox="0 0 '+w+' '+h+'" style="width:100%;height:'+h+'px">'+
+    '<polyline points="'+ePts+' '+base+'" fill="rgba('+hexToRgb(ec)+',.12)" stroke="'+ec+'" stroke-width="1.5" stroke-linejoin="round"/>'+
+    '<polyline points="'+iPts+' '+base+'" fill="rgba('+hexToRgb(ic)+',.12)" stroke="'+ic+'" stroke-width="1.5" stroke-linejoin="round"/>'+
+    sorted.map(function(v,i){
+      var d=new Date(parseInt(v[0]));
+      return '<text x="'+(padL+i*plotW/(sorted.length-1||1)).toFixed(1)+'" y="'+(h-2)+'" text-anchor="middle" fill="var(--mute)" font-size="7">'+['J','F','M','A','M','J','J','A','S','O','N','D'][d.getMonth()]+'/'+('0'+d.getDate()).slice(-2)+'</text>';
+    }).join('')+
+    '</svg>';
 }
 
 function renderDonut(fl){
