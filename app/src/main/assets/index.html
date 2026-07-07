@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="theme-color" id="tc" content="#f5f3ef">
 <title>Awdit</title>
 <style>
 @font-face{font-family:'Work Sans';font-style:normal;font-weight:400 700;font-display:swap;src:url(fonts/WorkSans.woff2)format('woff2')}
@@ -11,7 +12,7 @@
   --bg:#f5f3ef;--glass:rgba(255,255,255,.72);--glass-border:rgba(255,255,255,.3);
   --glass-shadow:0 8px 32px rgba(0,0,0,.06);--ink:#333;--body:#555;--mute:#888;--gold:#d4a843;
   --gold-light:#e8c97a;--gold-dark:#b8922e;--inc:#2e7d32;--exp:#c62828;--accent:#d4a843;
-  --tag-bg:rgba(51,51,51,.06);--font:'Work Sans',-apple-system,sans-serif;
+  --tag-bg:rgba(51,51,51,.06);--font:'SF Pro Display','Work Sans',-apple-system,sans-serif;
   --mono:'SF Mono',SFMono-Regular,Menlo,Monaco,Consolas,monospace;
 }
 @media(prefers-color-scheme:dark){
@@ -152,6 +153,8 @@ body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%
 .shim{background:linear-gradient(90deg,var(--glass) 0,rgba(212,168,67,.1) 40%,var(--glass) 80%);background-size:200% 100%;animation:shimmer 1.2s ease infinite;border-radius:8px}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+.ov{position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.3);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);display:flex;align-items:flex-start;justify-content:center;padding:32px 12px;overflow-y:auto;animation:fadeUp .2s ease both}
+.ov .sc{width:100%;max-width:360px}
 </style>
 </head>
 <body>
@@ -160,9 +163,10 @@ body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%
   <div class="hdr-inner">
     <h1>✦ Awdit</h1>
     <div class="hdr-acts">
-      <button onclick="toggleTheme()">◐</button>
-      <button onclick="go()">↻</button>
-      <button onclick="share()">↑</button>
+      <button onclick="toggleTheme()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+      <button onclick="settings()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></button>
+      <button onclick="go()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.5 9a9 9 0 0114.4-3.9L23 10M1 14l5.1 4.9A9 9 0 0020.5 15"/></svg></button>
+      <button onclick="share()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></button>
     </div>
   </div>
   <div class="sub" id="sub">setup required</div>
@@ -182,6 +186,7 @@ body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%
 <script>
 var all=[],pen=[],activeB='all',activeT='all',bal={};
 var C='(?:ETB|Birr|Br\\.?)';
+function cur(){return localStorage.getItem('cu')||'ETB'}
 
 function isC(){return !!localStorage.getItem('c')}
 function gf(){
@@ -351,10 +356,10 @@ function renderSum(fl){
 function ani(id,target){
   var el=document.getElementById(id);if(!el)return;
   var start=parseFloat(el.dataset.v||'0'),dur=500,st=performance.now();
-  if(Math.abs(target-start)<.01){el.textContent='ETB '+target.toFixed(2);el.dataset.v=target;return}
+  if(Math.abs(target-start)<.01){el.textContent=cur()+' '+target.toFixed(2);el.dataset.v=target;return}
   function step(ts){
     var p=Math.min((ts-st)/dur,1),e=1-Math.pow(1-p,3);
-    el.textContent='ETB '+(start+(target-start)*e).toFixed(2);
+    el.textContent=cur()+' '+(start+(target-start)*e).toFixed(2);
     if(p<1)requestAnimationFrame(step);else el.dataset.v=target;
   }
   el.dataset.v=start;requestAnimationFrame(step);
@@ -363,7 +368,7 @@ function ani(id,target){
 function renderStats(fl){
   var bks={};fl.forEach(function(t){if(!bks[t.bank])bks[t.bank]={i:0,e:0};if(t.direction==='income')bks[t.bank].i+=t.amount;else bks[t.bank].e+=t.amount});
   var h='';
-  for(var b in bks)h+='<div class="bc glass pad-sm"><div class="bl">'+bl(b)+'</div><div class="bv g">+ETB '+bks[b].i.toFixed(2)+'</div><div class="bv r">-ETB '+bks[b].e.toFixed(2)+'</div></div>';
+  for(var b in bks)h+='<div class="bc glass pad-sm"><div class="bl">'+bl(b)+'</div><div class="bv g">+'+cur()+' '+bks[b].i.toFixed(2)+'</div><div class="bv r">-'+cur()+' '+bks[b].e.toFixed(2)+'</div></div>';
   document.getElementById('st').innerHTML=h;
 }
 
@@ -401,8 +406,8 @@ function renderInsight(fl){
   var maxT=null,maxA=0;
   fl.forEach(function(t){if(t.amount>maxA){maxA=t.amount;maxT=t}});
   var h='';
-  if(topCat&&topAmt>0)h+='<div class="ins glass"><span class="ii">◆</span><div class="it">Most spent on: <b>'+catL[topCat]+'</b> (ETB '+topAmt.toFixed(2)+')</div></div>';
-  if(maxT)h+='<div class="ins glass"><span class="ii">◆</span><div class="it">Largest: <b>'+esc(maxT.description)+'</b> (ETB '+maxA.toFixed(2)+')</div></div>';
+  if(topCat&&topAmt>0)h+='<div class="ins glass"><span class="ii">◆</span><div class="it">Most spent on: <b>'+catL[topCat]+'</b> ('+cur()+' '+topAmt.toFixed(2)+')</div></div>';
+  if(maxT)h+='<div class="ins glass"><span class="ii">◆</span><div class="it">Largest: <b>'+esc(maxT.description)+'</b> ('+cur()+' '+maxA.toFixed(2)+')</div></div>';
   document.getElementById('ins').innerHTML=h;
 }
 
@@ -410,7 +415,7 @@ function renderBal(){
   var h='';
   for(var b in bal){
     if(bal[b]&&bal[b].amt>0){
-      h+='<div class="be"><div class="bn">'+bl(b)+'</div><div class="bv">ETB '+bal[b].amt.toFixed(2)+'</div></div>';
+      h+='<div class="be"><div class="bn">'+bl(b)+'</div><div class="bv">'+cur()+' '+bal[b].amt.toFixed(2)+'</div></div>';
     }
   }
   document.getElementById('bls').innerHTML=h?'<div class="bx glass"><h3>Balance</h3><div class="br">'+h+'</div></div>':'';
@@ -433,7 +438,7 @@ function renderList(fl){
       h+='<div class="tx" style="animation-delay:'+(idx*25)+'ms"><div class="ti '+cc+'">'+ic+'</div><div class="tb">'+
         '<div class="tr"><span class="tba">'+bl(t.bank)+'</span><span class="tca '+t.category+'">'+catS[t.category]+'</span></div>'+
         '<div class="td">'+esc(t.description)+'</div><div class="td2">'+t.dateStr+'</div></div>'+
-        '<div class="ta '+cc+'">'+(t.direction==='income'?'+':'-')+'ETB '+t.amount.toFixed(2)+'</div></div>';
+        '<div class="ta '+cc+'">'+(t.direction==='income'?'+':'-')+cur()+' '+t.amount.toFixed(2)+'</div></div>';
       idx++;
     });
   });
@@ -443,7 +448,7 @@ function renderList(fl){
 function share(){
   var fl=[],inc=0,exp=0;
   all.forEach(function(t){fl.push(t);if(t.direction==='income')inc+=t.amount;else exp+=t.amount});
-  var txt='Awdit Report\n'+new Date().toLocaleDateString()+'\n'+'─'.repeat(30)+'\nIncome: ETB '+inc.toFixed(2)+'\nExpense: ETB '+exp.toFixed(2)+'\nNet: ETB '+(inc-exp).toFixed(2)+'\n'+'─'.repeat(30)+'\n\n'+fl.map(function(t){return(t.direction==='income'?'+':'-')+'ETB '+t.amount.toFixed(2)+' | '+t.category+' | '+t.dateStr}).join('\n');
+  var c=cur();var txt='Awdit Report\n'+new Date().toLocaleDateString()+'\n'+'─'.repeat(30)+'\nIncome: '+c+' '+inc.toFixed(2)+'\nExpense: '+c+' '+exp.toFixed(2)+'\nNet: '+c+' '+(inc-exp).toFixed(2)+'\n'+'─'.repeat(30)+'\n\n'+fl.map(function(t){return(t.direction==='income'?'+':'-')+c+' '+t.amount.toFixed(2)+' | '+t.category+' | '+t.dateStr}).join('\n');
   var ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.left='-999px';document.body.appendChild(ta);ta.select();
   try{document.execCommand('copy')}catch(e){}
   document.body.removeChild(ta);
@@ -457,13 +462,37 @@ function toggleTheme(){
   else{
     var s=document.createElement('style');s.id='to';
     var dm=window.matchMedia('(prefers-color-scheme:dark)').matches;
-    s.textContent=':root{'+(!dm?'--bg:#1a1a1a;--glass:rgba(30,30,30,.78);--glass-border:rgba(255,255,255,.08);--glass-shadow:0 8px 32px rgba(0,0,0,.3);--ink:#e8e8e8;--body:#aaa;--mute:#777;--tag-bg:rgba(255,255,255,.06)':'--bg:#f5f3ef;--glass:rgba(255,255,255,.72);--glass-border:rgba(255,255,255,.3);--glass-shadow:0 8px 32px rgba(0,0,0,.06);--ink:#333;--body:#555;--mute:#888;--tag-bg:rgba(51,51,51,.06)')+'}';
+    var dark='--bg:#1a1a1a;--glass:rgba(30,30,30,.78);--glass-border:rgba(255,255,255,.08);--glass-shadow:0 8px 32px rgba(0,0,0,.3);--ink:#e8e8e8;--body:#aaa;--mute:#777;--tag-bg:rgba(255,255,255,.06)';
+    var light='--bg:#f5f3ef;--glass:rgba(255,255,255,.72);--glass-border:rgba(255,255,255,.3);--glass-shadow:0 8px 32px rgba(0,0,0,.06);--ink:#333;--body:#555;--mute:#888;--tag-bg:rgba(51,51,51,.06)';
+    s.textContent=':root{'+(dm?light:dark)+'}';
     document.head.appendChild(s);
+    try{Android.statusBarColor(dm?'#f5f3ef':'#1a1a1a')}catch(e){};
   }
 }
 
-function pageReady(){if(isC())go();else setup()}
-function smsGranted(){if(isC())go();else setup()}
+function closeSettings(){var o=document.getElementById('ov');if(o)o.remove()}
+function settings(){
+  var b=JSON.parse(localStorage.getItem('b')||'["telebirr","cbe","dashen"]');
+  var c=localStorage.getItem('x')||'127';
+  var d=document.createElement('div');d.id='ov';d.className='ov';
+  d.innerHTML='<div class="sc glass pad"><div style="display:flex;justify-content:space-between;align-items:center"><h2>Settings</h2><button onclick="closeSettings()" style="background:none;border:none;color:var(--mute);font-size:18px;cursor:pointer">✕</button></div><p>Manage banks and senders.</p><div id="bc2">'+
+    [{i:'telebirr',l:'Telebirr',h:'Shortcode 127'},{i:'cbe',l:'CBE Birr',h:'Commercial Bank of Ethiopia'},{i:'dashen',l:'Dashen Bank',h:'Dashen Bank S.C.'}]
+    .map(function(b2){return '<label><input type="checkbox" value="'+b2.i+'"'+(b.indexOf(b2.i)>=0?' checked':'')+'><div><div class="lt">'+b2.l+'</div><div class="lh">'+b2.h+'</div></div></label>'}).join('')+
+    '</div><label class="el">Extra sender numbers</label><input type="text" class="ei" id="cs2" value="'+c+'">'+
+    '<label class="el" style="margin-top:10px">Currency</label><input type="text" class="ei" id="cu" value="'+(localStorage.getItem('cu')||'ETB')+'">'+
+    '<button class="sb" onclick="saveSettings()" style="margin-top:14px">Save</button></div>';
+  document.body.appendChild(d);
+}
+function saveSettings(){
+  var cks=[];document.querySelectorAll('#bc2 input:checked').forEach(function(e){cks.push(e.value)});
+  var cs=document.getElementById('cs2').value.trim();
+  var cu=document.getElementById('cu').value.trim()||'ETB';
+  localStorage.setItem('b',JSON.stringify(cks));localStorage.setItem('x',cs||'127');localStorage.setItem('cu',cu);
+  closeSettings();
+  if(localStorage.getItem('c'))go();
+}
+function pageReady(){try{Android.statusBarColor(window.matchMedia('(prefers-color-scheme:dark)').matches?'#1a1a1a':'#f5f3ef')}catch(e){};if(isC())go();else setup()}
+function smsGranted(){try{Android.statusBarColor(window.matchMedia('(prefers-color-scheme:dark)').matches?'#1a1a1a':'#f5f3ef')}catch(e){};if(isC())go();else setup()}
 function smsDenied(){document.getElementById('ct').innerHTML='<div class="em">SMS permission required</div>'}
 function showError(m){document.getElementById('ct').innerHTML='<div class="em" style="color:var(--exp)">'+esc(m)+'</div>'}
 

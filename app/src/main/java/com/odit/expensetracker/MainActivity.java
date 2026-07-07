@@ -3,10 +3,13 @@ package com.odit.expensetracker;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.View;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -30,6 +33,7 @@ public class MainActivity extends Activity {
         webView.getSettings().setJavaScriptEnabled(true);
         webView.getSettings().setDomStorageEnabled(true);
         webView.addJavascriptInterface(new SmsBridge(), "Android");
+        setStatusBarColor("#f5f3ef");
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
@@ -127,7 +131,27 @@ public class MainActivity extends Activity {
 
     private String[] filterArgs = new String[]{"%telebirr%", "127", "%cbe%", "%dashen%"};
 
+    private void setStatusBarColor(String color) {
+        runOnUiThread(() -> {
+            try {
+                getWindow().setStatusBarColor(Color.parseColor(color));
+                boolean light = color.equals("#f5f3ef") || color.equals("#ffffff");
+                if (Build.VERSION.SDK_INT >= 23) {
+                    int flags = getWindow().getDecorView().getSystemUiVisibility();
+                    if (light) flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+                    else flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+                    getWindow().getDecorView().setSystemUiVisibility(flags);
+                }
+            } catch (Exception ignored) {}
+        });
+    }
+
     private class SmsBridge {
+        @JavascriptInterface
+        public void statusBarColor(String color) {
+            setStatusBarColor(color);
+        }
+
         @JavascriptInterface
         public void setFilters(String filters) {
             if (filters.isEmpty()) {
